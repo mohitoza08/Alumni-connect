@@ -14,21 +14,38 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  max: 2,
+  min: 0,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 3000,
   ssl: {
     rejectUnauthorized: false,
   },
 })
 
 export async function query<T = any>(text: string, params?: any[]): Promise<T[]> {
+  const start = Date.now()
   const client = await pool.connect()
   try {
     const result = await client.query(text, params)
+    const duration = Date.now() - start
+    if (duration > 5000) {
+      console.log("[v0] Slow query:", { text: text.substring(0, 50), duration, rows: result.rowCount })
+    }
     return result.rows as T[]
-  } catch (error) {
-    console.error("[v0] Database query error:", error)
+  } catch (error: any) {
+    console.error("[v0] Database query error:", error.message)
+    if (error.code === 'XX000' || error.message.includes('MaxClients')) {
+      console.log("[v0] Connection pool exhausted, retrying...")
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      const retryClient = await pool.connect()
+      try {
+        const result = await retryClient.query(text, params)
+        return result.rows as T[]
+      } finally {
+        retryClient.release()
+      }
+    }
     throw error
   } finally {
     client.release()
