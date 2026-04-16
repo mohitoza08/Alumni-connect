@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
 import { query } from "@/lib/db"
 
-export async function GET() {
 export const dynamic = "force-dynamic"
+
+export async function GET() {
   try {
     const items = await query(`
       SELECT 
