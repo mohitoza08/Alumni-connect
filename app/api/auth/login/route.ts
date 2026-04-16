@@ -11,6 +11,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { email, password, college, role } = body
 
+    console.log("[v0] Login attempt:", { email, college })
+
     if (!email || !password || !college) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
@@ -24,19 +26,38 @@ export async function POST(req: NextRequest) {
         "SELECT id FROM colleges WHERE name = $1 OR code = $1",
         [college]
       )
+      console.log("[v0] College search result:", collegeResult)
       if (collegeResult.length > 0) {
         collegeId = collegeResult[0].id
       }
     }
 
     if (collegeId === null) {
-      return NextResponse.json({ error: "Invalid college" }, { status: 400 })
+      return NextResponse.json({ error: "Invalid college - college not found in database" }, { status: 400 })
+    }
+
+    console.log("[v0] Using collegeId:", collegeId)
+
+    // Check if user exists
+    const userCheck = await query(
+      "SELECT id, email, status FROM users WHERE email = $1 AND college_id = $2",
+      [email, collegeId]
+    )
+    console.log("[v0] User check:", userCheck)
+
+    if (userCheck.length === 0) {
+      return NextResponse.json({ error: "User not found with this email and college" }, { status: 401 })
+    }
+
+    const userData = userCheck[0]
+    if (userData.status !== 'active') {
+      return NextResponse.json({ error: `Account is ${userData.status}, not active` }, { status: 401 })
     }
 
     const user = await authenticateUser(email, password, collegeId)
 
     if (!user) {
-      return NextResponse.json({ error: "Invalid email or password, or account not yet approved" }, { status: 401 })
+      return NextResponse.json({ error: "Invalid password" }, { status: 401 })
     }
 
     // Create session
@@ -59,8 +80,8 @@ export async function POST(req: NextRequest) {
       token: session.token,
       message: "Login successful",
     })
-  } catch (error) {
-    console.error("[v0] Login error:", error)
-    return NextResponse.json({ error: "Login failed" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[v0] Login error:", error.message)
+    return NextResponse.json({ error: "Login failed: " + error.message }, { status: 500 })
   }
 }
