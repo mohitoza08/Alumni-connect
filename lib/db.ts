@@ -1,55 +1,56 @@
 import { config } from "dotenv"
-import { Pool } from "pg"
 
 config({ path: ".env.local" })
 
 if (!process.env.DATABASE_URL) {
-  console.error("\n❌ DATABASE_URL is not defined!")
-  console.error("\n📖 Quick Fix:")
-  console.error("  1. Create a .env.local file in the project root")
-  console.error("  2. Add your local PostgreSQL connection string:")
-  console.error('     DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/alumni_connect"')
-  console.error("\n")
+  console.error("❌ DATABASE_URL is not defined!")
 }
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 2,
-  min: 0,
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 3000,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-})
+import { Pool } from "pg"
+
+const globalPool = global as any
+
+if (!globalPool.pgPool) {
+  globalPool.pgPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 1,
+    min: 0,
+    idleTimeoutMillis: 5000,
+    connectionTimeoutMillis: 5000,
+    allowExitOnIdle: true,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  })
+
+  globalPool.pgPool.on("error", (err: any) => {
+    console.error("[v0] Unexpected pool error:", err.message)
+  })
+}
+
+const pool = globalPool.pgPool
 
 export async function query<T = any>(text: string, params?: any[]): Promise<T[]> {
-  const start = Date.now()
-  const client = await pool.connect()
-  try {
-    const result = await client.query(text, params)
-    const duration = Date.now() - start
-    if (duration > 5000) {
-      console.log("[v0] Slow query:", { text: text.substring(0, 50), duration, rows: result.rowCount })
-    }
-    return result.rows as T[]
-  } catch (error: any) {
-    console.error("[v0] Database query error:", error.message)
-    if (error.code === 'XX000' || error.message.includes('MaxClients')) {
-      console.log("[v0] Connection pool exhausted, retrying...")
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      const retryClient = await pool.connect()
-      try {
-        const result = await retryClient.query(text, params)
-        return result.rows as T[]
-      } finally {
-        retryClient.release()
+  const maxRetries = 3
+  let lastError: any
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const result = await pool.query(text, params)
+      return result.rows as T[]
+    } catch (error: any) {
+      lastError = error
+      if (error.code === 'XX000' || error.message.includes('MaxClients') || error.message.includes('too many clients')) {
+        console.log(`[v0] Connection limit hit, retry ${i + 1}/${maxRetries}...`)
+        await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)))
+        continue
       }
+      throw error
     }
-    throw error
-  } finally {
-    client.release()
   }
+
+  console.error("[v0] Query failed after retries:", lastError.message)
+  throw lastError
 }
 
 export async function transaction<T>(callback: (client: any) => Promise<T>): Promise<T> {
@@ -67,16 +68,4 @@ export async function transaction<T>(callback: (client: any) => Promise<T>): Pro
   }
 }
 
-// Export pool for advanced usage
 export { pool }
-
-// Graceful shutdown
-process.on("SIGINT", async () => {
-  await pool.end()
-  process.exit(0)
-})
-
-process.on("SIGTERM", async () => {
-  await pool.end()
-  process.exit(0)
-})
