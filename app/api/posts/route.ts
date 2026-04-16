@@ -3,6 +3,8 @@ import { getServerSession } from "@/lib/session-helper"
 import { createPost, getPosts } from "@/lib/db-helpers"
 import { query } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getServerSession()

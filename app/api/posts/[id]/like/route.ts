@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "@/lib/session-helper"
 import { likePost, unlikePost } from "@/lib/db-helpers"
 
+export const dynamic = "force-dynamic"
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getServerSession()

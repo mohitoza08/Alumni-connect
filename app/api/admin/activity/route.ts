@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { query } from "@/lib/db"
 
 export interface Activity {
+export const dynamic = "force-dynamic"
   id: string
   type: "user_signup" | "post_created" | "event_created" | "comment"
   userId: number

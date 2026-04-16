@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "@/lib/session-helper"
 import { createMessage, getMessages } from "@/lib/db-helpers"
 
+export const dynamic = "force-dynamic"
 export async function POST(req: NextRequest) {
   try {
     const user = await getServerSession()

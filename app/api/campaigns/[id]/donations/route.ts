@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { query } from "@/lib/db"
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export const dynamic = "force-dynamic"
   try {
     const campaignId = Number.parseInt(params.id)
     if (isNaN(campaignId)) {

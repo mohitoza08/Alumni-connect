@@ -6,6 +6,8 @@ import { getServerSession } from "@/lib/session-helper"
 import { Users, Calendar, BookOpen, Heart, MessageSquare, DollarSign } from "lucide-react"
 import { query } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 export default async function AlumniDashboard() {
   const user = await getServerSession()
 

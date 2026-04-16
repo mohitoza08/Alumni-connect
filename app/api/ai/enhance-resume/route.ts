@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createGroq } from "@ai-sdk/groq"
 import { generateText } from "ai"
 
+export const dynamic = "force-dynamic"
 export async function POST(req: Request) {
   let body: {
     bio?: string

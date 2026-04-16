@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "@/lib/session-helper"
 import { deleteUser } from "@/lib/db-helpers"
 import { query } from "@/lib/db"
+export const dynamic = "force-dynamic"
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {

@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "@/lib/session-helper"
 import { query } from "@/lib/db"
 import { deleteMentorshipRequest } from "@/lib/db-helpers"
+export const dynamic = "force-dynamic"
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

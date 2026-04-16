@@ -7,6 +7,8 @@ import { getServerSession } from "@/lib/session-helper"
 import { Users, UserCheck, MessageSquare, Calendar, TrendingUp, BarChart3 } from "lucide-react"
 import { query } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 export default async function AdminDashboard() {
   const user = await getServerSession()
 
