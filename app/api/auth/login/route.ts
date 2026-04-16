@@ -4,6 +4,8 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()

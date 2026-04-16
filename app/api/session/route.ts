@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "@/lib/session-helper"
 import { getUserBySession } from "@/lib/auth-db"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(req: NextRequest) {
   try {
     // Try cookie-based session first

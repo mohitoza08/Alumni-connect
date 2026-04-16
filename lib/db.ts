@@ -17,9 +17,6 @@ const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
-  ssl: {
-    rejectUnauthorized: false,
-  },
 })
 
 export async function query<T = any>(text: string, params?: any[]): Promise<T[]> {
